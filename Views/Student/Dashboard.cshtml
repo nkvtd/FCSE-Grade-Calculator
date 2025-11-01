@@ -1,0 +1,139 @@
+﻿@model FCSE_Grade_Calculator.Models.ViewModels.StudentDashboardViewModel
+@{
+    ViewBag.Title = "Student Dashboard";
+}
+@Html.AntiForgeryToken()
+
+<div class="container">
+    <h2 class="text-primary">
+        <span class="glyphicon glyphicon-education"></span> Student Dashboard
+    </h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-6">
+            <h4 class="text-primary">Enrolled Courses</h4>
+            <div id="enrolled-courses">
+                @if (Model.Student.EnrolledCourses.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var e in Model.Student.EnrolledCourses.OrderBy(c => c.Course.Name))
+                        {
+                            <a href="@Url.Action("CourseDetails", "Student", new { id = e.CourseId })"
+                               class="list-group-item list-group-item-action clearfix"
+                               id="enrolled-course-@e.CourseId">
+                                <div class="pull-left">
+                                    <strong>@e.Course.Acronym</strong> – @e.Course.Name
+                                    <br />
+                                    @if (e.FinalPoints.HasValue && !string.IsNullOrEmpty(e.FinalGradeLabel))
+                                    {
+                                        <small><strong>@e.FinalGradeValue</strong> (@e.FinalGradeLabel) – @e.FinalPoints.Value.ToString("0.##")%</small>
+                                    }
+                                    else
+                                    {
+                                        <small><em>Not calculated</em></small>
+                                    }
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        No enrolled courses.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4 class="text-success">Available Courses</h4>
+            <div id="available-courses">
+                @if (Model.AvailableCourses.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var c in Model.AvailableCourses.OrderBy(c => c.Name))
+                        {
+                            <div class="list-group-item clearfix"
+                                 id="available-course-@c.Id"
+                                 data-acronym="@c.Acronym"
+                                 data-name="@c.Name">
+                                <div class="pull-left">
+                                    <strong>@c.Acronym</strong> – @c.Name
+                                </div>
+                                <button data-id="@c.Id" class="btn btn-xs btn-success pull-right js-enroll-course">
+                                    <span class="glyphicon glyphicon-plus"></span> Enroll
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        All courses are already enrolled.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        padding: 12px 18px;
+        font-size: 15px;
+        transition: background-color 0.2s ease;
+    }
+
+        .list-group-item:hover {
+            background-color: #f5f5f5;
+            text-decoration: none;
+        }
+</style>
+
+@section scripts {
+    <script>
+        $(document).on('click', '.js-enroll-course', function () {
+            var courseId = $(this).data('id');
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var $item = $('#available-course-' + courseId);
+            var acronym = $item.data('acronym');
+            var name = $item.data('name');
+
+            $.post('@Url.Action("Enroll", "Student")', { courseId: courseId, __RequestVerificationToken: token })
+                .done(function (res) {
+                    if (res.success) {
+                        $item.fadeOut(200, function () {
+                            $(this).remove();
+
+                            var newItem = `
+                                <a href="/Student/CourseDetails/${courseId}"
+                                   class="list-group-item list-group-item-action clearfix"
+                                   id="enrolled-course-${courseId}">
+                                    <div class="pull-left">
+                                        <strong>${acronym}</strong> – ${name}<br/>
+                                        <small><em>Not calculated</em></small>
+                                    </div>
+                                </a>`;
+
+                            var $list = $('#enrolled-courses .list-group');
+                            if ($list.length === 0) {
+                                $('#enrolled-courses').html('<div class="list-group"></div>');
+                                $list = $('#enrolled-courses .list-group');
+                            }
+                            $list.append($(newItem).hide().fadeIn(300));
+
+                            $('#enrolled-courses .alert-info').fadeOut(200, function () { $(this).remove(); });
+                        });
+                    } else {
+                        alert('Enrollment failed.');
+                    }
+                })
+                .fail(function () {
+                    alert('Error enrolling in course.');
+                });
+        });
+    </script>
+}

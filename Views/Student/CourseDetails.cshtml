@@ -1,0 +1,88 @@
+﻿@model FCSE_Grade_Calculator.Models.Courses.Enrollment
+@{
+    ViewBag.Title = "Course Details";
+}
+
+<h2>@Model.Course.Acronym – @Model.Course.Name</h2>
+
+@using (Html.BeginForm("", "", FormMethod.Post, new { id = "calcForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Hidden("enrollmentId", Model.Id)
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Weight (%)</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cs in Model.ComponentScores)
+            {
+                <tr>
+                    <td>@cs.CourseComponent.Name</td>
+                    <td>@cs.CourseComponent.Weight</td>
+                    <td>
+                        <input type="number" step="0.01" min="0" max="1000"
+                               name="score_@cs.Id" value="@cs.Points"
+                               class="form-control" @(Model.IsGradeConfirmed ? "disabled" : "") />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="text-right">
+        <a href="@Url.Action("Dashboard", "Student")" class="btn btn-secondary">
+            <span class="glyphicon glyphicon-arrow-left"></span> Back to Dashboard
+        </a>
+
+        @if (!Model.IsGradeConfirmed)
+        {
+            <button type="submit" class="btn btn-primary">
+                <span class="glyphicon glyphicon-refresh"></span> Calculate Grade
+            </button>
+        }
+    </div>
+}
+
+<div id="result" style="margin-top:15px;">
+    @if (Model.FinalPoints.HasValue)
+    {
+        <p><strong>Total Points:</strong> @Model.FinalPoints</p>
+        <p><strong>Grade:</strong> @Model.FinalGradeLabel</p>
+    }
+</div>
+
+@section scripts {
+    @if (!Model.IsGradeConfirmed)
+    {
+        <script>
+            $(function () {
+                $('#calcForm').submit(function (e) {
+                    e.preventDefault();
+                    $.ajax({
+                        url: '@Url.Action("Calculate", "Student")',
+                        method: 'POST',
+                        data: $(this).serialize(),
+                        success: function (res) {
+                            if (res.success) {
+                                $('#result').html(
+                                    '<p><strong>Total Points:</strong> ' + res.points.toFixed(2) + '</p>' +
+                                    '<p><strong>Grade:</strong> ' + res.value + ' (' + res.label + ')</p>'
+                                );
+                            } else {
+                                alert('Error: ' + res.message);
+                            }
+                        },
+                        error: function () {
+                            alert('Error calculating grade.');
+                        }
+                    });
+                });
+            });
+        </script>
+    }
+}

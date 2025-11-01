@@ -1,0 +1,55 @@
+﻿@model FCSE_Grade_Calculator.Models.Teacher
+
+@{
+    ViewBag.Title = "Teacher Dashboard";
+}
+
+<div class="container">
+    <h2 class="text-primary">
+        <span class="glyphicon glyphicon-education"></span> Teacher Dashboard
+    </h2>
+    <hr />
+
+    @if (Model.AssignedCourses != null && Model.AssignedCourses.Any())
+    {
+        <div class="list-group">
+            @foreach (var course in Model.AssignedCourses.OrderBy(c => c.Name))
+            {
+                <a href="@Url.Action("CourseDetails", "Teacher", new { id = course.Id })" class="list-group-item list-group-item-action clearfix">
+                    <div class="pull-left">
+                        <strong>@course.Acronym</strong> – @course.Name
+                    </div>
+                    <span class="badge pull-right" title="Number of students enrolled">
+                        @course.Enrollments.Count() students
+                    </span>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <span class="glyphicon glyphicon-info-sign"></span>
+            You are currently not assigned to any courses.
+        </div>
+    }
+</div>
+
+<style>
+    .list-group-item {
+        padding: 15px 20px;
+        font-size: 16px;
+        transition: background-color 0.2s ease;
+    }
+
+        .list-group-item:hover {
+            background-color: #f5f5f5;
+            text-decoration: none;
+        }
+
+    .badge {
+        font-size: 0.9em;
+        background-color: #337ab7;
+        color: white;
+    }
+</style>

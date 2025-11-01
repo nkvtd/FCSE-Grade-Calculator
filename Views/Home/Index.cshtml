@@ -1,0 +1,46 @@
+﻿@{
+    ViewBag.Title = "Welcome";
+}
+
+<div class="container text-center" style="margin-top:120px; max-width:600px;">
+    <h2 class="text-primary">
+        <span class="glyphicon glyphicon-education"></span>
+        FCSE Grade Calculator
+    </h2>
+
+    <hr/>
+
+    <div class="panel panel-default">
+        <div class="panel-body" style="padding:50px 40px;">
+            <div>
+                <a href="@Url.Action("Login", "Account")"
+                   class="btn btn-primary btn-lg btn-block" style="margin-bottom:20px;">
+                    <span class="glyphicon glyphicon-log-in"></span> Login
+                </a>
+            </div>
+            <div>
+                <a href="@Url.Action("Register", "Account")"
+                   class="btn btn-success btn-lg btn-block">
+                    <span class="glyphicon glyphicon-pencil"></span> Register
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f8faff;
+        font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    h2 {
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>

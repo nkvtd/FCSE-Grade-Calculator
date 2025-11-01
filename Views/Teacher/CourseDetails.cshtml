@@ -1,0 +1,108 @@
+﻿@model FCSE_Grade_Calculator.Models.Courses.Course
+
+@{
+    ViewBag.Title = "Course Details - " + Model.Name;
+}
+
+<div class="container">
+    <h2>@Model.Acronym – @Model.Name</h2>
+    <hr />
+
+    @if (Model.Enrollments.Any())
+    {
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Student Index</th>
+                    <th style="width:80px;">Points</th>
+                    <th style="width:60px;">Grade</th>
+                    <th style="width:80px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model.Enrollments)
+                {
+                    <tr id="enrollment-@e.Id">
+                        <td>@e.Student.Index</td>
+                        <td>
+                            <input type="number" step="0.01" class="form-control input-sm points-input"
+                                   value="@e.FinalPoints" @(e.IsGradeConfirmed ? "disabled" : "") />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control input-sm grade-input"
+                                   value="@e.FinalGradeLabel" @(e.IsGradeConfirmed ? "disabled" : "") />
+                        </td>
+                        <td class="text-center">
+                            @if (!e.IsGradeConfirmed)
+                            {
+                                <div>
+                                    <button class="btn btn-primary btn-sm js-update-grade" data-id="@e.Id" style="padding:3px 6px;">Save</button>
+                                </div>
+                            }
+                            @if (!e.IsGradeConfirmed)
+                            {
+                                <div>
+                                    <button class="btn btn-success btn-sm js-confirm-grade" data-id="@e.Id" style="padding:3px 6px;">Confirm</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="label label-success">Confirmed</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No students enrolled in this course yet.</p>
+    }
+
+    <a href="@Url.Action("Dashboard", "Teacher")" class="btn btn-secondary">
+        <span class="glyphicon glyphicon-arrow-left"></span> Back to Dashboard
+    </a>
+</div>
+
+@section scripts {
+    <script>
+$(function () {
+    $(document).on('click', '.js-update-grade', function () {
+        var id = $(this).data('id');
+        var row = $('#enrollment-' + id);
+        var points = row.find('.points-input').val();
+        var grade = row.find('.grade-input').val();
+
+        $.post('@Url.Action("UpdateGrade", "Teacher")', { enrollmentId: id, points: points, gradeLabel: grade })
+            .done(function (res) {
+                if (res.success)
+                    alert('Grade updated successfully.');
+                else
+                    alert('Error updating grade.');
+            })
+            .fail(function () {
+                alert('Failed to update grade.');
+            });
+    });
+
+    $(document).on('click', '.js-confirm-grade', function () {
+        var id = $(this).data('id');
+        if (!confirm('Confirm this grade? Once confirmed, it cannot be changed.')) return;
+
+        $.post('@Url.Action("ConfirmGrade", "Teacher")', { enrollmentId: id })
+            .done(function (res) {
+                if (res.success) {
+                    var row = $('#enrollment-' + id);
+                    row.find('input, button').prop('disabled', true);
+                    row.find('td:eq(4)').html('<span class="label label-success">Confirmed</span>');
+                    alert('Grade confirmed!');
+                }
+            })
+            .fail(function () {
+                alert('Failed to confirm grade.');
+            });
+    });
+});
+    </script>
+}

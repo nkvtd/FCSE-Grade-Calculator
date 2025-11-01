@@ -1,0 +1,153 @@
+﻿@model FCSE_Grade_Calculator.Models.ViewModels.CreateCourseViewModel
+
+@{
+    ViewBag.Title = Model.Id.HasValue ? "Edit Course" : "Create Course";
+}
+
+<div class="container">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                @(Model.Id.HasValue ? "Edit Course" : "Create New Course")
+            </h3>
+        </div>
+
+        <div class="panel-body">
+            @using (Html.BeginForm(Model.Id.HasValue ? "EditCourse" : "CreateCourse", "Admin", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Id)
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Name, new { @class = "control-label" })
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Acronym, new { @class = "control-label" })
+                    @Html.TextBoxFor(m => m.Acronym, new { @class = "form-control" })
+                </div>
+
+                <div class="form-group">
+                    @Html.Label("Assigned Teacher", new { @class = "control-label" })
+
+                    @if (Model.Id.HasValue)
+                    {
+                        <div class="input-group">
+                            @Html.DropDownListFor(m => m.TeacherId, Model.Teachers, "Select Teacher", new { @class = "form-control" })
+                        </div>
+                        if (!string.IsNullOrEmpty(Model.TeacherName))
+                        {
+                            <p class="help-block text-info">
+                                Current teacher: <strong>@(Model.TeacherName)</strong>
+                            </p>
+                        }
+                    }
+                    else
+                    {
+                        @Html.DropDownListFor(m => m.TeacherId, Model.Teachers, "Select Teacher", new { @class = "form-control" })
+                    }
+                </div>
+
+                <hr />
+                <h4 class="text-primary">Course Components</h4>
+                <p>Select which components this course includes and set their weights (must total 100%).</p>
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Include</th>
+                            <th>Component</th>
+                            <th>Weight (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Components.Count; i++)
+                        {
+                            <tr>
+                                <td>@Html.CheckBoxFor(m => m.Components[i].Included, new { @class = "include-toggle" })</td>
+                                <td>
+                                    @Html.HiddenFor(m => m.Components[i].Name)
+                                    @Model.Components[i].Name
+                                </td>
+                                <td>
+                                    @Html.TextBoxFor(m => m.Components[i].Weight,
+                                                  new { @class = "form-control weight-input", type = "number", step = "0.1", disabled = !Model.Components[i].Included })
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="alert alert-info" id="totalWeightAlert">
+                    Total weight: <span id="totalWeight">0</span>%
+                </div>
+
+                <hr />
+                <h4 class="text-primary">Grade Scale (A–E)</h4>
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Grade</th>
+                            <th>Value</th>
+                            <th>Min Points</th>
+                            <th>Max Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.GradeScale.Count; i++)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.HiddenFor(m => m.GradeScale[i].GradeLabel)
+                                    @Model.GradeScale[i].GradeLabel
+                                </td>
+                                <td>
+                                    @Html.HiddenFor(m => m.GradeScale[i].GradeValue)
+                                    @Model.GradeScale[i].GradeValue
+                                </td>
+                                <td>@Html.TextBoxFor(m => m.GradeScale[i].MinPoints, new { @class = "form-control", style = "width:80px;" })</td>
+                                <td>@Html.TextBoxFor(m => m.GradeScale[i].MaxPoints, new { @class = "form-control", style = "width:80px;" })</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="text-right">
+                    <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-default">Cancel</a>
+                    <button type="submit" class="btn btn-success">
+                        @(Model.Id.HasValue ? "Save Changes" : "Create Course")
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(function () {
+            function updateTotalWeight() {
+                var total = 0;
+                $('.include-toggle').each(function () {
+                    var row = $(this).closest('tr');
+                    var input = row.find('.weight-input');
+                    if ($(this).is(':checked')) {
+                        input.prop('disabled', false);
+                        var val = parseFloat(input.val()) || 0;
+                        total += val;
+                    } else {
+                        input.prop('disabled', true).val('');
+                    }
+                });
+                $('#totalWeight').text(total.toFixed(2));
+                $('#totalWeightAlert')
+                    .toggleClass('alert-success', total === 100)
+                    .toggleClass('alert-danger', total > 100);
+            }
+
+            $('.include-toggle, .weight-input').on('change keyup', updateTotalWeight);
+            updateTotalWeight();
+        });
+    </script>
+}
